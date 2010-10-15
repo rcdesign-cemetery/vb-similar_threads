@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="simthreads_advice" active="1">
+	<title>Similar Threads Advice.</title>
+	<description>Shows similar threads when user types name of new one.</description>
+	<version>0.1</version>
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></versioncheckurl>
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
+	<dependencies>
+	</dependencies>
+	<codes>
+	</codes>
+	<templates>
+		<template name="similar_threads_blank_info" templatetype="template" date="1287119336" username="Jannie" version="0.1"><![CDATA[<div id='similar_threads'></div>
+<div class='simthreads_clear'></div>]]></template>
+		<template name="similar_threads_css" templatetype="template" date="1287109215" username="Jannie" version="0.1"><![CDATA[<style type="text/css">
+/* Similar Threads */
+#similar_threads {
+        height:0px;
+        overflow:hidden;
+}
+
+.similar_threads {
+        clear:both;
+        border:none !important;
+}
+
+.similar_threads li {
+        padding:{vb:stylevar blockrow_padding};
+}
+
+ol.similar_threads li h6 a {
+        font-size:{vb:stylevar mid_fontSize};
+        font-weight:bold;
+        color:{vb:stylevar link_color};
+}
+
+#similar_threads .optiontitle {
+        display:block;
+        padding-left:5px;
+        font-size:13px;
+        font-weight:bold;
+}
+
+.similar_threads .starter_forum {
+	font-size:{vb:stylevar small_fontSize};
+}
+
+.similar_threads .titleblock {
+        float:{vb:stylevar left}
+}
+
+.similar_threads .dateblock {
+        float:{vb:stylevar right};
+        text-align:{vb:stylevar right};
+        font-size:{vb:stylevar small_fontSize}
+}
+
+.similar_threads .shade {
+        font-size: {vb:stylevar small_fontSize};
+}
+
+.simthreads_clear {
+        clear:both;
+        height:1px;
+}
+</style>]]></template>
+		<template name="similar_threads_info" templatetype="template" date="1287109416" username="Jannie" version="0.1"><![CDATA[<div id="similar_threads" style="">
+    <vb:if condition="$similarthreadbits">
+    <h4 class="threadinfohead"><span class="optiontitle">{vb:rawphrase simthreads_title}</span></h4>
+    </vb:if>
+    <div>
+        <ol class="similar_threads">
+        <vb:if condition="$similarthreadbits">
+            <vb:each from="similarthreadbits" key="threadid" value="entry">
+            <li class="floatcontainer">
+                <div class="titleblock">
+                    <h6><vb:if condition="$simthread['prefix_rich']">
+	                <span class="prefix understate">{vb:raw entry.prefix_rich}</span>
+                        </vb:if>
+                        <a href="{vb:link thread, {vb:raw entry}}" title="{vb:raw entry.preview}">{vb:raw entry.title}</a></h6>
+                    <div class="shade">
+                        {vb:rawphrase simthreads_in_forum_x, {vb:raw entry.forumtitle}}
+                    </div>
+                </div>
+                <div class="dateblock">
+                    <span class="shade">{vb:rawphrase replies}:</span> {vb:raw entry.replycount}
+                    <div class="starter_forum">
+                        <span class="shade">{vb:rawphrase last_post}:</span> {vb:raw entry.lastreplydate}, <span class="time">{vb:raw entry.lastreplytime}</span>
+                    </div>
+                </div>
+            </li>
+            </vb:each>
+            <li class="floatcontainer">
+                <div class="dateblock">
+                    <a href="search.php?do=process&type[]=1&titleonly=1&sortby=relevance&query={vb:raw query}" onclick="SimThreads.searchSimthreads(); return false;">{vb:rawphrase simthreads_more_results}</a>
+                </div>
+            </li>
+        <vb:else />
+            <li>
+                <div class="starter_forum">{vb:rawphrase simthreads_not_found}</div>
+            </li>
+        </vb:if>
+        </ol>
+    </div>
+</div>]]></template>
+		<template name="similar_threads_init_js" templatetype="template" date="1286784905" username="admin" version="0.1"><![CDATA[<script type="text/javascript">
+<!--
+    SimThreads.init();
+//-->
+</script>]]></template>
+		<template name="similar_threads_js" templatetype="template" date="1286962709" username="admin" version="0.1"><![CDATA[<script type="text/javascript" src="clientscript/simthreads.js?v={vb:raw version}"></script>
+<!-- YUI Animation Library -->
+<script type="text/javascript" src="{vb:stylevar yuipath}/animation/animation-min.js?v={vb:raw vboptions.simpleversion}"></script>]]></template>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>Get similar threads</title>
+			<hookname>ajax_complete</hookname>
+			<phpcode><![CDATA[if ($_POST['do'] == 'find_similar')
+{
+    $vbulletin->input->clean_array_gpc('r', array(
+        'query' => TYPE_STRING,
+    ));
+
+    $searchcontroller = vB_Search_Core::get_instance()->get_search_controller();
+    $ids = $searchcontroller->get_similar_threads(trim($vbulletin->GPC['query']));
+
+    $similarthreads = '';
+    $num_items = 0;
+    if (!empty($ids) AND is_array($ids))
+    {
+        $simthrds = $db->query_read_slave("SELECT thread.threadid, thread.forumid, thread.title, thread.prefixid, thread.taglist, postusername, postuserid, thread.lastpost, thread.replycount, forum.title AS forumtitle
+                " . iif($vbulletin->options['threadpreview'], ",post.pagetext AS preview") . "
+                " . iif($vbulletin->options['threadsubscribed'] AND $vbulletin->userinfo['userid'], ", NOT ISNULL(subscribethread.subscribethreadid) AS issubscribed") . "
+                FROM " . TABLE_PREFIX . "thread AS thread
+                INNER JOIN " . TABLE_PREFIX . "forum AS forum ON (forum.forumid = thread.forumid)
+                " . iif($vbulletin->options['threadpreview'], "LEFT JOIN " . TABLE_PREFIX . "post AS post ON (post.postid = thread.firstpostid)") . "
+                " . iif($vbulletin->options['threadsubscribed'] AND $vbulletin->userinfo['userid'], " LEFT JOIN " . TABLE_PREFIX . "subscribethread AS subscribethread ON (subscribethread.threadid = thread.threadid AND subscribethread.userid = " . $vbulletin->userinfo['userid'] . " AND canview = 1)") . "
+                WHERE thread.threadid IN (".implode($ids, ',').") AND thread.visible = 1
+                      " . iif (($permissions['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['cancontrolpanel']) OR ($permissions['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['ismoderator']) OR can_moderate($forumid), '', "AND forum.password = ''") . "
+                $globalignore
+                ORDER BY FIELD(thread.threadid, ".implode($ids, ',').")
+        ");
+
+        $similarthreadbits = array();
+        $forum_active_cache = array();
+        while ($simthread = $db->fetch_array($simthrds))
+        {
+            if (!isset($forum_active_cache["$simthread[forumid]"]))
+            {
+                $current_forum = $vbulletin->forumcache["$simthread[forumid]"];
+                while (!empty($current_forum))
+                {
+                    if (!($current_forum['options'] & $vbulletin->bf_misc_forumoptions['active']))
+                    {
+                        // all children of this forum should be hidden now
+                        $forum_children = explode(',', trim($current_forum['childlist']));
+                        foreach ($forum_children AS $forumid)
+                        {
+                            if ($forumid == '-1')
+                            {
+                                continue;
+                            }
+                            $forum_active_cache["$forumid"] = false;
+                        }
+                        break;
+                    }
+
+                    $forum_active_cache["$current_forum[forumid]"] = true;
+                    $current_forum = $vbulletin->forumcache["$current_forum[parentid]"];
+                }
+            }
+
+            if (!$forum_active_cache["$simthread[forumid]"])
+            {
+                continue;
+            }
+
+            $fperms = fetch_permissions($simthread['forumid']);
+            if (($fperms & $vbulletin->bf_ugp_forumpermissions['canview']) AND
+                (($fperms & $vbulletin->bf_ugp_forumpermissions['canviewothers']) OR ($vbulletin->userinfo['userid'] != 0 AND
+                  $simthread['postuserid'] == $vbulletin->userinfo['userid'])))
+            {
+                // format thread preview if there is one
+                if (isset($ignore["$simthread[postuserid]"]))
+                {
+                    $simthread['preview'] = '';
+                }
+                else if (isset($simthread['preview']) AND $vbulletin->options['threadpreview'] > 0)
+                {
+                    $simthread['preview'] = strip_quotes($simthread['preview']);
+                    $simthread['preview'] = htmlspecialchars_uni(fetch_trimmed_title(strip_bbcode($simthread['preview'], false, true), $vbulletin->options['threadpreview']));
+                }
+
+                $simthread['lastreplydate'] = vbdate($vbulletin->options['dateformat'], $simthread['lastpost'], true);
+                $simthread['lastreplytime'] = vbdate($vbulletin->options['timeformat'], $simthread['lastpost']);
+
+                if ($simthread['prefixid'])
+                {
+                    $simthread['prefix_plain_html'] = htmlspecialchars_uni($vbphrase["prefix_$simthread[prefixid]_title_plain"]);
+                    $simthread['prefix_rich'] = $vbphrase["prefix_$simthread[prefixid]_title_rich"];
+                }
+                else
+                {
+                    $simthread['prefix_plain_html'] = '';
+                    $simthread['prefix_rich'] = '';
+                }
+
+                $simthread['title'] = fetch_censored_text($simthread['title']);
+
+                $similarthreadbits[] = $simthread;
+            }
+        }
+    }
+
+    $templater = vB_Template::create('similar_threads_info');
+    if (!empty($similarthreadbits) AND !empty($ids))
+    {
+        $templater->register('similarthreadbits', $similarthreadbits);
+        $templater->register('query', urlencode(trim($vbulletin->GPC['query']))); 
+        $num_items = count($similarthreadbits);
+    }
+    else
+    {
+        $templater->register('similarthreadbits', $similarthreadbits);
+        $similarthreadbits = '';
+    }
+    $similarthreads = $templater->render();
+
+    // create response for ajax
+    require_once(DIR . '/includes/class_xml.php');
+
+    $xml = new vB_AJAX_XML_Builder($vbulletin, 'text/xml');
+    $xml->add_group('similar');
+    if ($similarthreads)
+    {
+        $xml->add_tag('similar_threads', $similarthreads);
+        $xml->add_tag('num_items', $num_items);
+    }
+    $xml->close_group();
+    $xml->print_xml();
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Cache templates</title>
+			<hookname>cache_templates</hookname>
+			<phpcode><![CDATA[if ('newthread' == THIS_SCRIPT AND $vbulletin->options['enablesearches'] AND ($vbulletin->userinfo['permissions']['forumpermissions'] & $vbulletin->bf_ugp_forumpermissions['cansearch']))
+{
+   $cache[] = 'similar_threads_info';
+   $cache[] = 'similar_threads_js';
+   $cache[] = 'similar_threads_css';
+   $cache[] = 'similar_threads_init_js';
+   $cache[] = 'similar_threads_blank_info';
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Add similar thread template</title>
+			<hookname>newthread_form_complete</hookname>
+			<phpcode><![CDATA[$templater = vB_Template::create('similar_threads_blank_info');
+$template_hook['similar_threads'] .= $templater->render();]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Insert js and templates</title>
+			<hookname>parse_templates</hookname>
+			<phpcode><![CDATA[if ('newthread' == THIS_SCRIPT AND $vbulletin->options['enablesearches']
+    AND ($vbulletin->userinfo['permissions']['forumpermissions'] & $vbulletin->bf_ugp_forumpermissions['cansearch']))
+{
+    if (array_key_exists('newthread', $vbulletin->templatecache))
+    {
+        $search = '\' . $messagearea . \'';
+        $replace = '\';$final_rendered .= $template_hook[\'similar_threads\'];$final_rendered .=\'' . $search;
+       $vbulletin->templatecache['newthread'] = str_replace($search, $replace, $vbulletin->templatecache['newthread']);
+    }
+
+    $templater = vB_Template::create('similar_threads_js');
+    $templater ->register('version', '0.1'); 
+    $template_hook['headinclude_javascript'] .= $templater->render();
+
+    $templater = vB_Template::create('similar_threads_init_js');
+    $template_hook['footer_javascript'] .= $templater->render();
+
+    $templater = vB_Template::create('similar_threads_css');
+    $template_hook['headinclude_bottom_css'] .= $templater->render();
+}]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="GLOBAL" fieldname="global">
+			<phrase name="simthreads_in_forum_x" date="1287119525" username="Jannie" version=""><![CDATA[in forum {1}]]></phrase>
+			<phrase name="simthreads_more_results" date="1287119536" username="Jannie" version=""><![CDATA[More results]]></phrase>
+			<phrase name="simthreads_not_found" date="1287119549" username="Jannie" version=""><![CDATA[No similar threads found.]]></phrase>
+			<phrase name="simthreads_title" date="1287119559" username="Jannie" version=""><![CDATA[Similar Threads:]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<templateedits>
+	</templateedits>
+</product>
