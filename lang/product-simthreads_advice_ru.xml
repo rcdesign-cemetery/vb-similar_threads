@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<language name="Russian (RU)" vbversion="4.0.7" product="simthreads_advice" type="custom">
+<language name="Russian (RU)" vbversion="4.0.6" product="simthreads_advice" type="custom">
 	<settings>
 		<options><![CDATA[1]]></options>
 		<languagecode><![CDATA[ru]]></languagecode>
@@ -17,9 +17,9 @@
 		<thousandsep><![CDATA[,]]></thousandsep>
 	</settings>
 	<phrasetype name="GLOBAL" fieldname="global">
-		<phrase name="show_similar_threads" date="1287106988" username="jpatuk"><![CDATA[Похожие темы:]]></phrase>
-		<phrase name="simthreads_in_forum_x" date="1287110001" username="jpatuk"><![CDATA[В разделе {1}]]></phrase>
+		<phrase name="simthreads_in_forum_x" date="1287126970" username="Vitaly"><![CDATA[в разделе {1}]]></phrase>
 		<phrase name="simthreads_more_results" date="1286797215" username="jpatuk"><![CDATA[Найти еще]]></phrase>
-		<phrase name="simthreads_nothing_found" date="1286520413" username="jpatuk"><![CDATA[Похожих тем не найдено.]]></phrase>
+		<phrase name="simthreads_not_found" date="1287126951" username="Vitaly"><![CDATA[Похожих тем не найдено.]]></phrase>
+		<phrase name="simthreads_title" date="1287126762" username="Vitaly"><![CDATA[Похожие темы:]]></phrase>
 	</phrasetype>
 </language>

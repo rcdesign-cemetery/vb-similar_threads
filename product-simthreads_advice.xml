@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <product productid="simthreads_advice" active="1">
-	<title>Similar Threads Advice.</title>
+	<title>Similar Threads Advice</title>
 	<description>Shows similar threads when user types name of new one.</description>
 	<version>0.1</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></url>
@@ -296,10 +296,10 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
 	</plugins>
 	<phrases>
 		<phrasetype name="GLOBAL" fieldname="global">
-			<phrase name="simthreads_in_forum_x" date="1287119525" username="Jannie" version=""><![CDATA[in forum {1}]]></phrase>
+			<phrase name="simthreads_in_forum_x" date="1287126970" username="Vitaly" version=""><![CDATA[in forum {1}]]></phrase>
 			<phrase name="simthreads_more_results" date="1287119536" username="Jannie" version=""><![CDATA[More results]]></phrase>
-			<phrase name="simthreads_not_found" date="1287119549" username="Jannie" version=""><![CDATA[No similar threads found.]]></phrase>
-			<phrase name="simthreads_title" date="1287119559" username="Jannie" version=""><![CDATA[Similar Threads:]]></phrase>
+			<phrase name="simthreads_not_found" date="1287126951" username="Vitaly" version=""><![CDATA[No similar threads found.]]></phrase>
+			<phrase name="simthreads_title" date="1287126762" username="Vitaly" version=""><![CDATA[Similar Threads:]]></phrase>
 		</phrasetype>
 	</phrases>
 	<options>
