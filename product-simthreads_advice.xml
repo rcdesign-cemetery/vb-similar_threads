@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <product productid="simthreads_advice" active="1">
-	<title>Similar Threads Advice</title>
+	<title>Similar Threads Advice.</title>
 	<description>Shows similar threads when user types name of new one.</description>
-	<version>0.1</version>
+	<version>0.2</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></versioncheckurl>
 	<apm_releasedate>0</apm_releasedate>
@@ -16,13 +16,14 @@
 	<codes>
 	</codes>
 	<templates>
-		<template name="similar_threads_blank_info" templatetype="template" date="1287119336" username="Jannie" version="0.1"><![CDATA[<div id='similar_threads'></div>
+		<template name="similar_threads_blank_info" templatetype="template" date="1287119336" username="jpatuk" version="0.1"><![CDATA[<div id='similar_threads'></div>
 <div class='simthreads_clear'></div>]]></template>
-		<template name="similar_threads_css" templatetype="template" date="1287109215" username="Jannie" version="0.1"><![CDATA[<style type="text/css">
+		<template name="similar_threads_css" templatetype="template" date="1287376061" username="jpatuk" version="0.1"><![CDATA[<style type="text/css">
 /* Similar Threads */
 #similar_threads {
         height:0px;
         overflow:hidden;
+        position:relative;
 }
 
 .similar_threads {
@@ -70,7 +71,7 @@ ol.similar_threads li h6 a {
         height:1px;
 }
 </style>]]></template>
-		<template name="similar_threads_info" templatetype="template" date="1287109416" username="Jannie" version="0.1"><![CDATA[<div id="similar_threads" style="">
+		<template name="similar_threads_info" templatetype="template" date="1287454359" username="jpatuk" version="0.1"><![CDATA[<div style="">
     <vb:if condition="$similarthreadbits">
     <h4 class="threadinfohead"><span class="optiontitle">{vb:rawphrase simthreads_title}</span></h4>
     </vb:if>
@@ -98,7 +99,7 @@ ol.similar_threads li h6 a {
             </vb:each>
             <li class="floatcontainer">
                 <div class="dateblock">
-                    <a href="search.php?do=process&type[]=1&titleonly=1&sortby=relevance&query={vb:raw query}" onclick="SimThreads.searchSimthreads(); return false;">{vb:rawphrase simthreads_more_results}</a>
+                    <a href="search.php?do=process&type[]=1&titleonly=1&sortby=relevance&query={vb:raw query}" onclick="SimThreads.moreResults(); return false;">{vb:rawphrase simthreads_more_results}</a>
                 </div>
             </li>
         <vb:else />
@@ -109,12 +110,12 @@ ol.similar_threads li h6 a {
         </ol>
     </div>
 </div>]]></template>
-		<template name="similar_threads_init_js" templatetype="template" date="1286784905" username="admin" version="0.1"><![CDATA[<script type="text/javascript">
+		<template name="similar_threads_init_js" templatetype="template" date="1286784905" username="jpatuk" version="0.1"><![CDATA[<script type="text/javascript">
 <!--
     SimThreads.init();
 //-->
 </script>]]></template>
-		<template name="similar_threads_js" templatetype="template" date="1286962709" username="admin" version="0.1"><![CDATA[<script type="text/javascript" src="clientscript/simthreads.js?v={vb:raw version}"></script>
+		<template name="similar_threads_js" templatetype="template" date="1286962709" username="jpatuk" version="0.1"><![CDATA[<script type="text/javascript" src="clientscript/simthreads.js?v={vb:raw version}"></script>
 <!-- YUI Animation Library -->
 <script type="text/javascript" src="{vb:stylevar yuipath}/animation/animation-min.js?v={vb:raw vboptions.simpleversion}"></script>]]></template>
 	</templates>
@@ -136,7 +137,6 @@ ol.similar_threads li h6 a {
     $ids = $searchcontroller->get_similar_threads(trim($vbulletin->GPC['query']));
 
     $similarthreads = '';
-    $num_items = 0;
     if (!empty($ids) AND is_array($ids))
     {
         $simthrds = $db->query_read_slave("SELECT thread.threadid, thread.forumid, thread.title, thread.prefixid, thread.taglist, postusername, postuserid, thread.lastpost, thread.replycount, forum.title AS forumtitle
@@ -228,7 +228,6 @@ ol.similar_threads li h6 a {
     {
         $templater->register('similarthreadbits', $similarthreadbits);
         $templater->register('query', urlencode(trim($vbulletin->GPC['query']))); 
-        $num_items = count($similarthreadbits);
     }
     else
     {
@@ -245,7 +244,6 @@ ol.similar_threads li h6 a {
     if ($similarthreads)
     {
         $xml->add_tag('similar_threads', $similarthreads);
-        $xml->add_tag('num_items', $num_items);
     }
     $xml->close_group();
     $xml->print_xml();
@@ -282,8 +280,12 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
        $vbulletin->templatecache['newthread'] = str_replace($search, $replace, $vbulletin->templatecache['newthread']);
     }
 
+    //define product version and assign it to JS version
+    define('SIMTHREADS_VERSION', '0.2');
+    $version = (!$vbulletin->debug) ? SIMTHREADS_VERSION : TIMENOW;
+
     $templater = vB_Template::create('similar_threads_js');
-    $templater ->register('version', '0.1'); 
+    $templater ->register('version', $version); 
     $template_hook['headinclude_javascript'] .= $templater->render();
 
     $templater = vB_Template::create('similar_threads_init_js');
@@ -296,10 +298,10 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
 	</plugins>
 	<phrases>
 		<phrasetype name="GLOBAL" fieldname="global">
-			<phrase name="simthreads_in_forum_x" date="1287126970" username="Vitaly" version=""><![CDATA[in forum {1}]]></phrase>
-			<phrase name="simthreads_more_results" date="1287119536" username="Jannie" version=""><![CDATA[More results]]></phrase>
-			<phrase name="simthreads_not_found" date="1287126951" username="Vitaly" version=""><![CDATA[No similar threads found.]]></phrase>
-			<phrase name="simthreads_title" date="1287126762" username="Vitaly" version=""><![CDATA[Similar Threads:]]></phrase>
+			<phrase name="simthreads_in_forum_x" date="1287131235" username="jpatuk" version=""><![CDATA[in forum {1}]]></phrase>
+			<phrase name="simthreads_more_results" date="1287131242" username="jpatuk" version=""><![CDATA[More results]]></phrase>
+			<phrase name="simthreads_not_found" date="1287131249" username="jpatuk" version=""><![CDATA[No similar threads found.]]></phrase>
+			<phrase name="simthreads_title" date="1287131255" username="jpatuk" version=""><![CDATA[Similar Threads:]]></phrase>
 		</phrasetype>
 	</phrases>
 	<options>

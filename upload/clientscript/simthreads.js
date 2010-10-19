@@ -6,7 +6,7 @@ var SimThreads = {
     simthreads_opacity_set: false,
     opacity_min_value: 0.2,
     opacity_max_value: 1,
-    current_search_word: '',
+    current_query: '',
 
     // contains similar threads HTML object
     simthreads_container: null,
@@ -16,15 +16,12 @@ var SimThreads = {
 
     // current height of similar threads block
     current_height: 0,
+    current_child: '',
+    // temporary node used to calculate height
+    temp_child:'',
 
-    // number of similar threads
-    num_simthreads: 0,
-
-    // different block heights: tread line, title, more results link and no results found
-    thread_block_height: 0,
-    thread_title_height: 0,
-    thread_more_results_height: 0,
-    thread_no_results_height: 0,
+    connection_handler:'',
+    animation_speed:0.5,
 
     /**
      * Onload function, add the handler on inputbox
@@ -32,31 +29,13 @@ var SimThreads = {
     init: function() {
         if (AJAX_Compatible)
         {
-            SimThreads.simthreads_containers = fetch_object('similar_threads');
-            if (SimThreads.simthreads_containers)
+            SimThreads.simthreads_container = fetch_object('similar_threads');
+            if (SimThreads.simthreads_container)
             {
                 SimThreads.inputbox = fetch_object('subject');
                 if (SimThreads.inputbox)
                 {
                     YAHOO.util.Event.on(SimThreads.inputbox, "keyup", SimThreads.handle_keyup);
-                }
-            }
-
-            // not all browsers have embedded getComputedStyle function
-            if (!window.getComputedStyle) {
-                window.getComputedStyle = function(el, pseudo) {
-                this.el = el;
-                this.getPropertyValue = function(prop) {
-                    var re = /(\-([a-z]){1})/g;
-                    if (prop == 'float') prop = 'styleFloat';
-                        if (re.test(prop)) {
-                            prop = prop.replace(re, function () {
-                            return arguments[2].toUpperCase();
-                        });
-                    }
-                    return el.currentStyle[prop] ? el.currentStyle[prop] : null;
-                }
-                return this;
                 }
             }
         }
@@ -69,7 +48,7 @@ var SimThreads = {
     handle_keyup: function(event) {
         clearTimeout(SimThreads.simthreads_timer_id);
 
-        if (SimThreads.current_search_word !== SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, ''))
+        if (SimThreads.current_query !== SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, ''))
         {
             SimThreads.simthreads_timer_id = setTimeout('SimThreads.sendInput()',1000);
             if (!SimThreads.simthreads_opacity_set)
@@ -88,104 +67,94 @@ var SimThreads = {
      */
     sendInput: function() {
         clearTimeout(SimThreads.simthreads_timer_id);
-        SimThreads.current_search_word = SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-        YAHOO.util.Connect.asyncRequest("POST", "ajax.php?do=find_similar&query=" + SimThreads.current_search_word
+        SimThreads.current_query = SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+        if (SimThreads.connection_handler != '')
+        {
+            YAHOO.util.Connect.abort(SimThreads.connection_handler);
+        }
+
+        SimThreads.connection_handler = YAHOO.util.Connect.asyncRequest("POST", "ajax.php?do=find_similar&query=" + SimThreads.current_query
                                                 + "&securitytoken=" + SECURITYTOKEN, {
             success: SimThreads.handle_ajax_response,
             failure: vBulletin_AJAX_Error_Handler,
             timeout: vB_Default_Timeout,
             scope: this
-        }, SESSIONURL + "securitytoken=" + SECURITYTOKEN + "&do=find_similar&query=" + SimThreads.current_search_word);
+        }, SESSIONURL + "securitytoken=" + SECURITYTOKEN + "&do=find_similar&query=" + SimThreads.current_query);
     },
 
     /**
-     * Recreate a node
+     * Append invisible node to calculate height
      * @param string_node node code string
+     */
+    get_height: function(string_node) {
+        string_node = string_node.replace('style=""','style="visibility: hidden;"');
+
+        SimThreads.simthreads_container.appendChild(string_to_node(string_node));
+        SimThreads.temp_child = SimThreads.simthreads_container.childNodes[SimThreads.simthreads_container.childNodes.length-1];
+        var height = 0;
+        if (SimThreads.temp_child.offsetHeight)
+        {
+            height = SimThreads.temp_child.offsetHeight;
+        }
+        return height;
+    },
+
+    /*
+     * Set height and opacity of the block before animation
      * @param height of recreated node
      * @param opacity of recreated node
      */
-    replace_node: function(string_node, height, opacity) {
-        if (height > 0)
+    prepare_animation: function(replacement_node) {
+        if (SimThreads.current_child != '')
         {
-            string_node = string_node.replace('style=""','style="height:'+height+'px;"');
+            // replace to avoid block jumping
+            SimThreads.simthreads_container.replaceChild(string_to_node(replacement_node),SimThreads.current_child);
         }
-
-        if (opacity >= 0)
+        else
         {
-            if (YAHOO.env.ua.ie)
-            {
-                string_node = string_node.replace('style="','style="filter: progid:DXImageTransform.Microsoft.Alpha(opacity='+opacity*100+');');
-            }
-            else
-            {
-                string_node = string_node.replace('style="','style="opacity:'+opacity+';');
-            }
+            SimThreads.simthreads_container.appendChild(string_to_node(replacement_node));
         }
-
-        SimThreads.simthreads_containers.parentNode.replaceChild(string_to_node(string_node), SimThreads.simthreads_containers);
-
-        // associate updated object with our variable
-        SimThreads.simthreads_containers = fetch_object('similar_threads');
+        SimThreads.simthreads_container.removeChild(SimThreads.temp_child);
+        if (SimThreads.simthreads_container.childNodes[0])
+        {
+            SimThreads.current_child = SimThreads.simthreads_container.childNodes[0];
+        }
     },
 
     /**
      * Handler server response
      */
     handle_ajax_response: function(ajax) {
+        SimThreads.connection_handler = '';
         if (ajax.responseXML)
         {
             // check for error first
             var error = ajax.responseXML.getElementsByTagName('error');
             if (error.length)
             {
-                alert(error[0].firstChild.nodeValue)
+                alert(error[0].firstChild.nodeValue);
             }
             else
             {
-                var num_items = ajax.responseXML.getElementsByTagName('num_items');
-                if (num_items.length)
-                {
-                    SimThreads.num_simthreads = num_items[0].firstChild.nodeValue;
-                }
-
-                var is_changed = false;
                 var string_node = '';
                 var new_simthreads = ajax.responseXML.getElementsByTagName('similar_threads');
                 if (new_simthreads.length)
                 {
                     string_node = new_simthreads[0].firstChild.nodeValue;
                 }
-                if (SimThreads.num_simthreads > 0 && SimThreads.thread_block_height == 0 ||
-                    SimThreads.num_simthreads == 0 && SimThreads.thread_no_results_height == 0)
-                {
-                    SimThreads.replace_node(string_node, SimThreads.current_height, -1);
-                    
-                    if (SimThreads.current_height == 0)
-                    {
-                        is_changed = true;
-                    }
-                }
-                else
-                {
-                    SimThreads.replace_node(string_node, SimThreads.getBlockHeight(), SimThreads.opacity_min_value);
-                }
-                
-                var height = SimThreads.getBlockHeight();
-                var anim = new YAHOO.util.Anim('similar_threads', { height: {from: SimThreads.current_height, to: height }} , 0.5);
-                if (!is_changed)
-                {
-                    anim.onTween.subscribe(function (type,data) { 
-                        var factor  = data[0].currentFrame / 1000;
-                        SimThreads.setOpacity(SimThreads.opacity_min_value + factor);
-                    });
-                    anim.onComplete.subscribe(function() {SimThreads.setOpacity(SimThreads.opacity_max_value);});
-                }
-                anim.animate();
 
-                if (is_changed)
-                {
-                    SimThreads.getRealHeight();
-                }
+                var height = SimThreads.get_height(string_node);
+                SimThreads.prepare_animation(string_node);
+
+                var anim = new YAHOO.util.Anim('similar_threads', { height: {from: SimThreads.current_height, to: height }} , SimThreads.animation_speed);
+                anim.onTween.subscribe(function (type,data) { 
+                    // we are getting the number of current frame in milliseconds
+                    var factor  = data[0].currentFrame / 1000;
+                    var animation_step = (SimThreads.opacity_max_value - SimThreads.opacity_min_value) / SimThreads.animation_speed;
+                    SimThreads.setOpacity(SimThreads.opacity_min_value + factor*step);
+                });
+                anim.onComplete.subscribe(function() {SimThreads.setOpacity(SimThreads.opacity_max_value);});
+                anim.animate();
 
                 SimThreads.current_height = height;
             }
@@ -195,11 +164,11 @@ var SimThreads = {
     /**
      * Redirects to search results for entered thread name
      */
-    searchSimthreads: function() {
-        if (SimThreads.current_search_word !== '')
+    moreResults: function() {
+        if (SimThreads.current_query !== '')
         {
             window.open(getBaseUrl()+ 'search.php?do=process&type[]=1&titleonly=1&securitytoken=' + SECURITYTOKEN +
-                                      '&query='+encodeURIComponent(SimThreads.current_search_word)+'&sortby=relevance');
+                                      '&query='+encodeURIComponent(SimThreads.current_query)+'&sortby=relevance');
 
         }
         return false;
@@ -211,7 +180,7 @@ var SimThreads = {
     setOpacity: function(opacity) {
         if (YAHOO.env.ua.ie)
         {
-            var oAlpha = SimThreads.simthreads_containers.filters['DXImageTransform.Microsoft.alpha'] || SimThreads.simthreads_containers.filters.alpha;
+            var oAlpha = SimThreads.simthreads_container.filters['DXImageTransform.Microsoft.alpha'] || SimThreads.simthreads_container.filters.alpha;
 
             if (oAlpha)
             {
@@ -219,81 +188,21 @@ var SimThreads = {
             }
             else
             {
-                SimThreads.simthreads_containers.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+opacity*100+")";
+                SimThreads.simthreads_container.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+opacity*100+")";
             }
         }
         else
         {
-            SimThreads.simthreads_containers.style.opacity = opacity;
+            SimThreads.simthreads_container.style.opacity = opacity;
         }
 
-        SimThreads.simthreads_opacity_set = !Boolean(opacity);
-    },
-
-    /*
-     * Calculate block height based on CSS, as our block is not rendered yet to DOM
-     */
-    getBlockHeight: function() {
-        var element_height = 0;
-        if (SimThreads.num_simthreads > 0 && SimThreads.thread_block_height == 0 ||
-            SimThreads.num_simthreads == 0 && SimThreads.thread_no_results_height == 0)
+        if (opacity == SimThreads.opacity_max_value)
         {
-            if (SimThreads.num_simthreads > 0)
-            {
-                var font_element = YAHOO.util.Dom.getElementsByClassName("shade", "*", SimThreads.simthreads_containers);
-                var cs = window.getComputedStyle(font_element[0], "");
-                var font_size = parseInt(cs.getPropertyValue("font-size").replace("px",""));
-                var li_element = YAHOO.util.Dom.getElementsByClassName("floatcontainer","li", SimThreads.simthreads_containers);
-                cs = window.getComputedStyle(li_element[0], "");
-                var paddings = parseInt(cs.getPropertyValue("padding-top").replace("px",""))
-                               + parseInt(cs.getPropertyValue("padding-bottom").replace("px",""));
-                element_height = (font_size*2 + paddings) * SimThreads.num_simthreads;
-                element_height += font_size + paddings;
-                
-                var option_title = YAHOO.util.Dom.getElementsByClassName("optiontitle", "*", SimThreads.simthreads_containers);
-                cs = window.getComputedStyle(option_title[0], "");
-                element_height += parseInt(cs.getPropertyValue("font-size").replace("px","")) + parseInt(cs.getPropertyValue("padding-top").replace("px",""))
-                                      + parseInt(cs.getPropertyValue("padding-bottom").replace("px",""));
-
-                element_height += element_height/5;
-            }
-            else
-            {
-                element_height = 20;
-            }
+            SimThreads.simthreads_opacity_set = false;
         }
         else
         {
-            if (SimThreads.num_simthreads > 0)
-            {
-                element_height = SimThreads.thread_block_height * SimThreads.num_simthreads + SimThreads.thread_title_height +
-                                     SimThreads.thread_more_results_height;
-            }
-            else
-            {
-                element_height = SimThreads.thread_no_results_height;
-            }
-        }
-        return element_height;
-    },
-
-    /*
-     * Calculate real block height based on offsetHeight
-     */
-    getRealHeight: function() {
-        if (SimThreads.num_simthreads > 0)
-        {
-            var li_element = YAHOO.util.Dom.getElementsByClassName("floatcontainer","li", SimThreads.simthreads_containers);
-            SimThreads.thread_block_height = li_element[0].offsetHeight;
-            SimThreads.thread_more_results_height = li_element[li_element.length - 1].offsetHeight;
-
-            var title = YAHOO.util.Dom.getElementsByClassName("optiontitle", "*", SimThreads.simthreads_containers);
-            SimThreads.thread_title_height = title[0].offsetHeight;
-        }
-        else
-        {
-            var li_element = YAHOO.util.Dom.getElementsByClassName("similar_threads","ol", SimThreads.simthreads_containers);
-            SimThreads.thread_no_results_height = li_element[0].offsetHeight;
+            SimThreads.simthreads_opacity_set = true;
         }
     }
 };
