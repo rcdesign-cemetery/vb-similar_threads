@@ -18,7 +18,7 @@
 	<templates>
 		<template name="similar_threads_blank_info" templatetype="template" date="1287119336" username="jpatuk" version="0.1"><![CDATA[<div id='similar_threads'></div>
 <div class='simthreads_clear'></div>]]></template>
-		<template name="similar_threads_css" templatetype="template" date="1287376061" username="jpatuk" version="0.1"><![CDATA[<style type="text/css">
+		<template name="similar_threads_css" templatetype="template" date="1288162317" username="jpatuk" version="0.2"><![CDATA[<style type="text/css">
 /* Similar Threads */
 #similar_threads {
         height:0px;
@@ -35,8 +35,11 @@
         padding:{vb:stylevar blockrow_padding};
 }
 
-ol.similar_threads li h6 a {
+ol.similar_threads li h6 {
         font-size:{vb:stylevar mid_fontSize};
+}
+
+ol.similar_threads li h6 a {
         font-weight:bold;
         color:{vb:stylevar link_color};
 }
@@ -71,7 +74,7 @@ ol.similar_threads li h6 a {
         height:1px;
 }
 </style>]]></template>
-		<template name="similar_threads_info" templatetype="template" date="1287454359" username="jpatuk" version="0.1"><![CDATA[<div style="">
+		<template name="similar_threads_info" templatetype="template" date="1288161846" username="jpatuk" version="0.2"><![CDATA[<div style="">
     <vb:if condition="$similarthreadbits">
     <h4 class="threadinfohead"><span class="optiontitle">{vb:rawphrase simthreads_title}</span></h4>
     </vb:if>
@@ -81,7 +84,7 @@ ol.similar_threads li h6 a {
             <vb:each from="similarthreadbits" key="threadid" value="entry">
             <li class="floatcontainer">
                 <div class="titleblock">
-                    <h6><vb:if condition="$simthread['prefix_rich']">
+                    <h6><vb:if condition="entry.prefix_rich">
 	                <span class="prefix understate">{vb:raw entry.prefix_rich}</span>
                         </vb:if>
                         <a href="{vb:link thread, {vb:raw entry}}" title="{vb:raw entry.preview}">{vb:raw entry.title}</a></h6>
@@ -299,7 +302,7 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
 	<phrases>
 		<phrasetype name="GLOBAL" fieldname="global">
 			<phrase name="simthreads_in_forum_x" date="1287131235" username="jpatuk" version=""><![CDATA[in forum {1}]]></phrase>
-			<phrase name="simthreads_more_results" date="1287131242" username="jpatuk" version=""><![CDATA[More results]]></phrase>
+			<phrase name="simthreads_more_results" date="1288162569" username="jpatuk" version=""><![CDATA[More results (press Enter)]]></phrase>
 			<phrase name="simthreads_not_found" date="1287131249" username="jpatuk" version=""><![CDATA[No similar threads found.]]></phrase>
 			<phrase name="simthreads_title" date="1287131255" username="jpatuk" version=""><![CDATA[Similar Threads:]]></phrase>
 		</phrasetype>

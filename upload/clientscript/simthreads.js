@@ -36,7 +36,24 @@ var SimThreads = {
                 if (SimThreads.inputbox)
                 {
                     YAHOO.util.Event.on(SimThreads.inputbox, "keyup", SimThreads.handle_keyup);
+                    YAHOO.util.Event.on(document, "keydown", SimThreads.handle_body_keyup);
+                    SimThreads.current_query = SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
                 }
+            }
+        }
+    },
+
+    /**
+     * If enter is pressed in subject field - redirect to the search results
+     */
+    handle_body_keyup: function(event) {
+        var elem = event.srcElement? event.srcElement : event.target;
+        if (event.keyCode == 13 && elem.id && elem.id == 'subject')
+        {
+            if (SimThreads.inputbox.value != '')
+            {
+                YAHOO.util.Event.stopEvent(event);
+                SimThreads.moreResults(true);
             }
         }
     },
@@ -163,12 +180,26 @@ var SimThreads = {
 
     /**
      * Redirects to search results for entered thread name
+     * @param optional are we displaying results on same page or in new window
      */
-    moreResults: function() {
-        if (SimThreads.current_query !== '')
+    moreResults: function(isSamePage) {
+        if (SimThreads.inputbox.value !== '')
         {
-            window.open(getBaseUrl()+ 'search.php?do=process&type[]=1&titleonly=1&securitytoken=' + SECURITYTOKEN +
-                                      '&query='+encodeURIComponent(SimThreads.current_query)+'&sortby=relevance');
+            if (isSamePage)
+            {
+                var pseudoform = new vB_Hidden_Form('search.php?do=process');
+                pseudoform.add_variable('type[]', 1);
+                pseudoform.add_variable('titleonly', 1);
+                pseudoform.add_variable('securitytoken', SECURITYTOKEN);
+                pseudoform.add_variable('query', SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, ''));
+                pseudoform.add_variable('sortby', 'relevance');
+                pseudoform.submit_form();
+            }
+            else
+            {
+                window.open(getBaseUrl()+ 'search.php?do=process&type[]=1&titleonly=1&securitytoken=' + SECURITYTOKEN +
+                                      '&query='+encodeURIComponent(SimThreads.inputbox.value.replace(/^\s\s*/, '').replace(/\s\s*$/, ''))+'&sortby=relevance');
+            }
 
         }
         return false;

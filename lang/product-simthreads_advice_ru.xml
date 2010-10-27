@@ -18,7 +18,7 @@
 	</settings>
 	<phrasetype name="GLOBAL" fieldname="global">
 		<phrase name="simthreads_in_forum_x" date="1287126970" username="Vitaly"><![CDATA[в разделе {1}]]></phrase>
-		<phrase name="simthreads_more_results" date="1286797215" username="jpatuk"><![CDATA[Найти еще]]></phrase>
+		<phrase name="simthreads_more_results" date="1288162569" username="Jannie"><![CDATA[Найти еще (нажмите Enter)]]></phrase>
 		<phrase name="simthreads_not_found" date="1287126951" username="Vitaly"><![CDATA[Похожих тем не найдено.]]></phrase>
 		<phrase name="simthreads_title" date="1287126762" username="Vitaly"><![CDATA[Похожие темы:]]></phrase>
 	</phrasetype>
