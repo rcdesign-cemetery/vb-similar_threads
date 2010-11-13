@@ -118,9 +118,10 @@ ol.similar_threads li h6 a {
     SimThreads.init();
 //-->
 </script>]]></template>
-		<template name="similar_threads_js" templatetype="template" date="1286962709" username="jpatuk" version="0.1"><![CDATA[<script type="text/javascript" src="clientscript/simthreads.js?v={vb:raw version}"></script>
-<!-- YUI Animation Library -->
-<script type="text/javascript" src="{vb:stylevar yuipath}/animation/animation-min.js?v={vb:raw vboptions.simpleversion}"></script>]]></template>
+		<template name="similar_threads_js" templatetype="template" date="1289631510" username="jpatuk" version="0.2"><![CDATA[<script type="text/javascript" src="clientscript/simthreads.js?v={vb:raw version}"></script>
+<vb:if condition="!isset($show['yui_animation_exists'])">
+<script type="text/javascript" src="{vb:stylevar yuipath}/animation/animation-min.js?v={vb:raw vboptions.simpleversion}"></script>
+</vb:if>]]></template>
 	</templates>
 	<stylevardfns>
 	</stylevardfns>
@@ -290,6 +291,11 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
     $templater = vB_Template::create('similar_threads_js');
     $templater ->register('version', $version); 
     $template_hook['headinclude_javascript'] .= $templater->render();
+
+    if (!$show['yui_animation_exists'])
+    {
+        $show['yui_animation_exists'] = true;
+    }
 
     $templater = vB_Template::create('similar_threads_init_js');
     $template_hook['footer_javascript'] .= $templater->render();
