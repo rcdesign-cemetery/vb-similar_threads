@@ -3,7 +3,7 @@
 <product productid="simthreads_advice" active="1">
 	<title>Similar Threads Advice.</title>
 	<description>Shows similar threads when user types name of new one.</description>
-	<version>0.2</version>
+	<version>0.3</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=simthreads_advice]]></versioncheckurl>
 	<apm_releasedate>0</apm_releasedate>
@@ -281,7 +281,24 @@ $template_hook['similar_threads'] .= $templater->render();]]></phpcode>
     {
         $search = '\' . $messagearea . \'';
         $replace = '\';$final_rendered .= $template_hook[\'similar_threads\'];$final_rendered .=\'' . $search;
-       $vbulletin->templatecache['newthread'] = str_replace($search, $replace, $vbulletin->templatecache['newthread']);
+
+        $before_patch = $vbulletin->templatecache['newthread'];
+        $vbulletin->templatecache['newthread'] = str_replace($search, $replace, $vbulletin->templatecache['newthread']);
+        if ($before_patch == $vbulletin->templatecache['newthread'])
+        {
+            $err_message = sprintf("Product '%s', error in hook %s : can't modify template '%s'",
+                                'Similar Threads Advice.',
+                                'parse_templates',
+                                'newthread');
+            error_log($err_message); // Send to PHP error log
+            if ($vbulletin->debug)
+            {
+                trigger_error($err_message, E_USER_WARNING); // Display on page
+                require_once(DIR . '/includes/functions_log_error.php');
+                log_vbulletin_error($err_message, 'php'); // Send to vB error log
+            }
+            unset($err_message, $before_patch);
+        }
     }
 
     //define product version and assign it to JS version
